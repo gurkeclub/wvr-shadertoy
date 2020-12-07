@@ -10,5 +10,4 @@ serde_json = "1.0"
 serde_derive = "1.0"
 ron = "0.6"
 reqwest = { version = "0.10", features = ["blocking"] }
-wvr-data = {git = "https://github.com/gurkeclub/wvr-data.git"}
-
+wvr-data = {git = "https://github.com/gurkeclub/wvr-data.git", branch="main"}
