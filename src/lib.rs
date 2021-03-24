@@ -43,8 +43,6 @@ pub fn create_project_from_shadertoy_url(
 
     let project_name = shadertoy_config.shader.info.name;
 
-    let libs_path = wvr_data_directory.join("libs");
-    let filters_path = wvr_data_directory.join("filters");
     let template_path = wvr_data_directory.join("projects").join("wvr_template");
     let project_path = wvr_data_directory.join("projects").join(project_name);
     let project_config_path = project_path.join("config.toml");
@@ -196,9 +194,6 @@ pub fn create_project_from_shadertoy_url(
     }
 
     let project_config = project_config::ProjectConfig {
-        filters_path: filters_path,
-        libs_path: libs_path,
-        path: project_path,
         view: project_config::ViewConfig {
             bpm: 89.0,
             width: 640,
