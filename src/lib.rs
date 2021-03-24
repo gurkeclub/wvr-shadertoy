@@ -45,6 +45,7 @@ pub fn create_project_from_shadertoy_url(
 
     let template_path = wvr_data_directory.join("projects").join("wvr_template");
     let project_path = wvr_data_directory.join("projects").join(project_name);
+    let project_filters_path = project_path.join("filters");
     let project_config_path = project_path.join("config.toml");
     let render_chain_path = project_path.join("render_chain");
 
@@ -139,14 +140,16 @@ pub fn create_project_from_shadertoy_url(
         }
     }
 
-    if !project_path.exists() {
-        std::fs::create_dir(&project_path).unwrap();
+    // Remove previous shadertoy project if existing
+    if project_path.exists() {
+        std::fs::remove_dir_all(&project_path).unwrap();
     }
 
-    if !render_chain_path.exists() {
-        std::fs::create_dir(&render_chain_path).unwrap();
-        std::fs::create_dir(&render_chain_path.join("utils")).unwrap();
-    }
+    // Creating the base structure for the project
+    std::fs::create_dir_all(&project_path).unwrap();
+    std::fs::create_dir(&project_filters_path).unwrap();
+    std::fs::create_dir(&render_chain_path).unwrap();
+    std::fs::create_dir(&render_chain_path.join("utils")).unwrap();
 
     std::fs::copy(
         template_path
@@ -194,8 +197,8 @@ pub fn create_project_from_shadertoy_url(
     }
 
     let project_config = project_config::ProjectConfig {
+        bpm: 89.0,
         view: project_config::ViewConfig {
-            bpm: 89.0,
             width: 640,
             height: 480,
             fullscreen: false,
@@ -213,7 +216,6 @@ pub fn create_project_from_shadertoy_url(
         },
         inputs,
         render_chain,
-        filters: filter_list,
         final_stage: final_stage.unwrap(),
     };
 
@@ -225,6 +227,18 @@ pub fn create_project_from_shadertoy_url(
                     .into_bytes(),
             )
             .unwrap();
+    }
+
+    for (filter_name, filter_config) in filter_list {
+        let filter_config_path = project_filters_path.join(format!("{:}.ron", filter_name));
+        if let Ok(mut filter_config_file) = std::fs::File::create(&filter_config_path) {
+            let filter_config_string =
+                ron::ser::to_string_pretty(&filter_config, ron::ser::PrettyConfig::default())
+                    .unwrap();
+            filter_config_file
+                .write_all(&filter_config_string.into_bytes())
+                .unwrap();
+        }
     }
 
     Some(project_config_path)
