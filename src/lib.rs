@@ -1,5 +1,4 @@
 extern crate reqwest;
-extern crate ron;
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
@@ -222,7 +221,7 @@ pub fn create_project_from_shadertoy_url(
     if let Ok(mut project_config_file) = std::fs::File::create(&project_config_path) {
         project_config_file
             .write_all(
-                &ron::ser::to_string_pretty(&project_config, ron::ser::PrettyConfig::default())
+                &serde_json::ser::to_string_pretty(&project_config)
                     .unwrap()
                     .into_bytes(),
             )
@@ -232,9 +231,7 @@ pub fn create_project_from_shadertoy_url(
     for (filter_name, filter_config) in filter_list {
         let filter_config_path = project_filters_path.join(format!("{:}.ron", filter_name));
         if let Ok(mut filter_config_file) = std::fs::File::create(&filter_config_path) {
-            let filter_config_string =
-                ron::ser::to_string_pretty(&filter_config, ron::ser::PrettyConfig::default())
-                    .unwrap();
+            let filter_config_string = serde_json::ser::to_string_pretty(&project_config).unwrap();
             filter_config_file
                 .write_all(&filter_config_string.into_bytes())
                 .unwrap();
