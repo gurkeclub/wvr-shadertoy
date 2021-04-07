@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use reqwest::blocking::get;
 
-use wvr_data::config::project_config::{self, SampledInput};
+use wvr_data::config::project_config::{self, FilterMode, SampledInput};
 use wvr_data::config::server_config::ServerConfig;
 
 pub mod config;
@@ -105,7 +105,7 @@ pub fn create_project_from_shadertoy_url(
         }
 
         let filter = project_config::FilterConfig {
-            path: None,
+            mode: FilterMode::Rectangle(0.0, 0.0, 1.0, 1.0),
             inputs: render_pass_inputs.keys().map(String::clone).collect(),
             variables: HashMap::new(),
             vertex_shader: vec![vertex_shader_file_path.clone()],
@@ -229,7 +229,7 @@ pub fn create_project_from_shadertoy_url(
     }
 
     for (filter_name, filter_config) in filter_list {
-        let filter_config_path = project_filters_path.join(format!("{:}.ron", filter_name));
+        let filter_config_path = project_filters_path.join(format!("{:}.json", filter_name));
         if let Ok(mut filter_config_file) = std::fs::File::create(&filter_config_path) {
             let filter_config_string = serde_json::ser::to_string_pretty(&project_config).unwrap();
             filter_config_file
