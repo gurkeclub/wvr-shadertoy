@@ -123,6 +123,7 @@ pub fn create_project_from_shadertoy_url(
         let render_stage = project_config::RenderStageConfig {
             name: render_stage_name.clone(),
             filter: render_stage_name.clone(),
+            filter_mode_params: FilterMode::Rectangle(0.0, 0.0, 1.0, 1.0),
             inputs: render_pass_inputs,
             variables: HashMap::new(),
             precision: project_config::BufferPrecision::F32,
