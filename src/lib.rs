@@ -1,9 +1,7 @@
-extern crate reqwest;
-extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate wvr_data;
+
+use anyhow::Result;
 
 use std::collections::HashMap;
 use std::fs;
@@ -11,7 +9,7 @@ use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use reqwest::blocking::get;
+use ureq::get;
 
 use wvr_data::config::project_config::{self, FilterMode, SampledInput};
 use wvr_data::config::server_config::ServerConfig;
@@ -24,21 +22,16 @@ pub fn create_project_from_shadertoy_url(
     wvr_data_directory: &Path,
     shadertoy_url: &str,
     api_key: &str,
-) -> Option<PathBuf> {
+) -> Result<PathBuf> {
     let shadertoy_id = shadertoy_url.split('/').last().unwrap();
 
     let request_url = format!(
         "https://www.shadertoy.com/api/v1/shaders/{:}?key={:}",
         shadertoy_id, api_key
     );
-    let mut response = get(&request_url).unwrap();
 
-    let shadertoy_config: ShadertoyConfig = {
-        let mut shadertoy_config = String::new();
-        response.read_to_string(&mut shadertoy_config).unwrap();
-
-        serde_json::from_str(&shadertoy_config).unwrap()
-    };
+    let shadertoy_config: ShadertoyConfig =
+        serde_json::from_str(&get(&request_url).call()?.into_string()?)?;
 
     let project_name = shadertoy_config.shader.info.name;
 
@@ -239,5 +232,5 @@ pub fn create_project_from_shadertoy_url(
         }
     }
 
-    Some(project_config_path)
+    Ok(project_config_path)
 }
