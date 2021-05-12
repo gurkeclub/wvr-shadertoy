@@ -199,6 +199,7 @@ pub fn create_project_from_shadertoy_url(
             vsync: true,
             screenshot: false,
             screenshot_path: PathBuf::from("output/"),
+            screenshot_frame_count: -1,
             target_fps: 60.0,
             locked_speed: false,
         },
