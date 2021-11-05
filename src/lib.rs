@@ -2,21 +2,27 @@
 extern crate serde_derive;
 
 use anyhow::Result;
+use wvr_data::config::filter::FilterConfig;
+use wvr_data::config::project::ProjectConfig;
+use wvr_data::config::project::ViewConfig;
+use wvr_data::config::rendering::RenderStageConfig;
+use wvr_data::types::BufferPrecision;
 
 use std::collections::HashMap;
 use std::fs;
-use std::io::Read;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use ureq::get;
 
-use wvr_data::config::project_config::{self, FilterMode, SampledInput};
-use wvr_data::config::server_config::ServerConfig;
+use wvr_data::config::filter::FilterMode;
+use wvr_data::config::input::InputConfig;
+use wvr_data::config::server::ServerConfig;
+use wvr_data::types::InputSampler;
 
 pub mod config;
 
-use config::{InputConfig, ShadertoyConfig};
+use config::ShadertoyConfig;
 
 pub fn create_project_from_shadertoy_url(
     wvr_data_directory: &Path,
@@ -74,17 +80,17 @@ pub fn create_project_from_shadertoy_url(
         for (index, input) in render_pass.inputs.iter().enumerate() {
             let uniform_name = format!("iChannel{:}", index);
             let input_name = match input {
-                InputConfig::Buffer { channel } => match channel {
+                config::InputConfig::Buffer { channel } => match channel {
                     0 => "Buffer A".to_owned(),
                     1 => "Buffer B".to_owned(),
                     2 => "Buffer C".to_owned(),
                     3 => "Buffer D".to_owned(),
                     _ => unimplemented!(),
                 },
-                InputConfig::Webcam { .. } => {
+                config::InputConfig::Webcam { .. } => {
                     inputs.insert(
                         "webcam".to_owned(),
-                        project_config::InputConfig::Cam {
+                        InputConfig::Cam {
                             path: "/dev/video0".to_owned(),
                             width: 640,
                             height: 480,
@@ -94,10 +100,10 @@ pub fn create_project_from_shadertoy_url(
                 }
             };
 
-            render_pass_inputs.insert(uniform_name.clone(), SampledInput::Linear(input_name));
+            render_pass_inputs.insert(uniform_name.clone(), InputSampler::Linear(input_name));
         }
 
-        let filter = project_config::FilterConfig {
+        let filter = FilterConfig {
             mode: FilterMode::Rectangle(0.0, 0.0, 1.0, 1.0),
             inputs: render_pass_inputs.keys().map(String::clone).collect(),
             variables: HashMap::new(),
@@ -113,13 +119,13 @@ pub fn create_project_from_shadertoy_url(
             ],
         };
 
-        let render_stage = project_config::RenderStageConfig {
+        let render_stage = RenderStageConfig {
             name: render_stage_name.clone(),
             filter: render_stage_name.clone(),
             filter_mode_params: FilterMode::Rectangle(0.0, 0.0, 1.0, 1.0),
             inputs: render_pass_inputs,
             variables: HashMap::new(),
-            precision: project_config::BufferPrecision::F32,
+            precision: BufferPrecision::F32,
         };
 
         filter_list.insert(filter_name.clone(), filter);
@@ -189,9 +195,9 @@ pub fn create_project_from_shadertoy_url(
         }
     }
 
-    let project_config = project_config::ProjectConfig {
+    let project_config = ProjectConfig {
         bpm: 89.0,
-        view: project_config::ViewConfig {
+        view: ViewConfig {
             width: 640,
             height: 480,
             fullscreen: false,
@@ -211,6 +217,7 @@ pub fn create_project_from_shadertoy_url(
         inputs,
         render_chain,
         final_stage: final_stage.unwrap(),
+        variables: HashMap::new(),
     };
 
     if let Ok(mut project_config_file) = std::fs::File::create(&project_config_path) {
@@ -223,7 +230,7 @@ pub fn create_project_from_shadertoy_url(
             .unwrap();
     }
 
-    for (filter_name, filter_config) in filter_list {
+    for (filter_name, _filter_config) in filter_list {
         let filter_config_path = project_filters_path.join(format!("{:}.json", filter_name));
         if let Ok(mut filter_config_file) = std::fs::File::create(&filter_config_path) {
             let filter_config_string = serde_json::ser::to_string_pretty(&project_config).unwrap();
